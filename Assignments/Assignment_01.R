@@ -26,22 +26,26 @@ df_lower_strat <- df_lower_strat[1:529, 1:3]
 # Filtering out data before "Year" 1980.
 df_lower_trop <- df_lower_trop %>% 
   mutate_at(vars(Globe), ~as.numeric(.)) %>%
-  mutate(rollmean = zoo::rollmean(Globe, 12, fill = NA, align = c("right"))) %>%
+  mutate(rollmean = zoo::rollmean(Globe, 12, fill = NA, 
+                                  align = c("right"))) %>%
   filter(Year >= 1980)
 
 df_mid_trop <- df_mid_trop %>% 
   mutate_at(vars(Globe), ~as.numeric(.)) %>%
-  mutate(rollmean = zoo::rollmean(Globe, 12, fill = NA, align = c("right"))) %>%
+  mutate(rollmean = zoo::rollmean(Globe, 12, fill = NA, 
+                                  align = c("right"))) %>%
   filter(Year >= 1980)
 
 df_trop <- df_trop %>% 
   mutate_at(vars(Globe), ~as.numeric(.)) %>%
-  mutate(rollmean = zoo::rollmean(Globe, 12, fill = NA, align = c("right"))) %>%
+  mutate(rollmean = zoo::rollmean(Globe, 12, fill = NA, 
+                                  align = c("right"))) %>%
   filter(Year >= 1980)
 
 df_lower_strat <- df_lower_strat %>% 
   mutate_at(vars(Globe), ~as.numeric(.)) %>%
-  mutate(rollmean = zoo::rollmean(Globe, 12, fill = NA, align = c("right"))) %>%
+  mutate(rollmean = zoo::rollmean(Globe, 12, fill = NA, 
+                                  align = c("right"))) %>%
   filter(Year >= 1980)
 
 # Calculating the average of the four 12-month moving averages.
@@ -49,8 +53,34 @@ df_lower_trop_av <- df_lower_trop %>%
   group_by(Year) %>%
   summarise(average = (mean(Globe)))
 
+df_lower_strat_av <- df_lower_strat %>%
+  group_by(Year) %>%
+  summarise(average = (mean(Globe)))
 
+df_trop_av <- df_trop %>%
+  group_by(Year) %>%
+  summarise(average = (mean(Globe)))
 
+df_mid_trop_av <- df_mid_trop %>%
+  group_by(Year) %>%
+  summarise(average = (mean(Globe)))
 
-
+# Plotting the graph.
+ggplot() +
+  geom_line(data = df_lower_trop_av,  
+            aes(x = Year, y = average, group = 1), 
+            linewidth = 1, color = "red",    alpha = 0.6) +
+  geom_line(data = df_lower_strat_av, 
+            aes(x = Year, y = average, group = 1), 
+            linewidth = 1, color = "blue",   alpha = 0.6) +
+  geom_line(data = df_trop_av,        
+            aes(x = Year, y = average, group = 1), 
+            linewidth = 1, color = "green",  alpha = 0.6) +
+  geom_line(data = df_mid_trop_av,    
+            aes(x = Year, y = average, group = 1), 
+            linewidth = 1, color = "orange", alpha = 0.6) +
+  labs(x = "Year", y = "Average temperature (Deg. C)", 
+       title = "Running, right 12-month average") +
+  scale_x_discrete(guide = guide_axis(n.dodge=2)) +
+  theme_bw()
 
