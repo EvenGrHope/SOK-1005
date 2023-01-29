@@ -44,9 +44,10 @@ df_lower_strat <- df_lower_strat %>%
   mutate(rollmean = zoo::rollmean(Globe, 12, fill = NA, align = c("right"))) %>%
   filter(Year >= 1980)
 
-# Calculating the average of the four 12-month moving averages. ???
-
-
+# Calculating the average of the four 12-month moving averages.
+df_lower_trop_av <- df_lower_trop %>%
+  group_by(Year) %>%
+  summarise(average = (mean(Globe)))
 
 
 
