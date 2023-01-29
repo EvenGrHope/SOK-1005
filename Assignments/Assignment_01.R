@@ -79,8 +79,11 @@ ggplot() +
   geom_line(data = df_mid_trop_av,    
             aes(x = Year, y = average, group = 1), 
             linewidth = 1, color = "orange", alpha = 0.6) +
-  labs(x = "Year", y = "Average temperature (Deg. C)", 
-       title = "Running, right 12-month average") +
+  geom_text(aes(x = 8, y = 0.6,      label = "Lower stratosphere"), color = "blue",   alpha = 0.6) +
+  geom_text(aes(x = 10, y = -0.4,    label = "Lower troposphere"),  color = "red",    alpha = 0.6) +
+  geom_text(aes(x = 17.4, y = -0.25, label = "Mid-troposphere"),    color = "orange", alpha = 1) +
+  geom_text(aes(x = 8, y = 0.2,      label = "Troposphere"),        color = "green",  alpha = 1) +
+  labs(x = "Year", y = "Average temperature (Deg. C)") +
   scale_x_discrete(guide = guide_axis(n.dodge=2)) +
   theme_bw()
 
