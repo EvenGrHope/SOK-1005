@@ -65,14 +65,13 @@ df <- df %>%
   mutate(Rollmean = rollmean(Globe, 12, fill = NA, align = c("right"))) %>%
   filter(Date >= "1980-01-01")
 
-# Plotting the graph.
+# Plotting the graph, with the "average" highlighted in a thicker line.
 df %>%
   ggplot(aes(x = Date, y = Rollmean, color = Location)) +
-  geom_line(aes(Location = "Average"), alpha = 0.6, size = 1) +
+  geom_line(aes(), alpha = 0.6, size = 1) +
+  geom_line(data = filter(df, Location == "Average"), size = 1.2) +
   labs(x = "Year", y = "Temprature (deg. C)", 
-       title = "12-months average global temprature",
-       subtitle = "Average global temp. from different layers in the atmosphere",
+       title = "12-months average global temprature over time",
+       subtitle = "How does the average global temp. from different layers in the atmosphere change over time?",
        color = "Atmosphere layer") +
   theme_bw()
-
-
