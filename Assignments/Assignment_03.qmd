@@ -1,0 +1,127 @@
+---
+title: "Assignment_03"
+format: pdf
+editor: visual
+echo: True
+warning: False
+---
+
+```{r}
+# Cleaning the memory and loading packages.
+rm(list=ls())
+suppressPackageStartupMessages(library(tidyverse))
+suppressPackageStartupMessages(library(jsonlite))
+suppressPackageStartupMessages(library(httr))
+```
+
+# Task 1)
+
+## Scrapping data
+
+```{r}
+# Create a GET response to call the API.
+us_corona <- httr::GET("https://static01.nyt.com/newsgraphics/2021/12/20/us-coronavirus-deaths-2021/ff0adde21623e111d8ce103fedecf7ffc7906264/scatter.json")
+
+# View API GET response result.
+str(us_corona)
+```
+
+```{r}
+# View main source of the data needed from the API - Normally content.
+str(us_corona$content)
+```
+
+```{r}
+# Convert the raw content to text (JSON string).
+us_corona_content <- httr::content(us_corona, as = "text")
+
+# View JSON string result.
+str(us_corona_content)
+```
+
+```{r}
+# Convert the JSON string to a dataframe.
+us_corona_JSON <- jsonlite::fromJSON(us_corona_content)
+
+# View data in a table.
+view(us_corona_JSON)
+```
+
+## Creating new variable
+
+```{r}
+# Getting short names for US states.
+states = state.abb
+
+# Adding DC since its not in the dataset.
+states = append(states, "DC", after = 8)
+```
+
+```{r}
+# Removing short names that will create clutter.
+replace_str = c("CT" = " ", "NJ" = " ", "VA" = " ", "CO" = " ", "OR" = " ", "NC" = " ", "TX" = " ", "AZ" = " ", "NV" = " ", "AK" = " ", "OK" = " ", "KY" = " ", "GA" = " ", "SD" = " ")
+
+states <- str_replace_all(states, replace_str)
+```
+
+```{r}
+# Adding the short names.
+us_corona_JSON <- us_corona_JSON %>%
+  mutate(short = states)
+```
+
+## Creating figure
+
+```{r}
+# Creating the figure.
+us_corona_figure <- us_corona_JSON %>%
+  ggplot(aes(x = fully_vaccinated_pct_of_pop, y = deaths_per_100k, 
+             label = short)) +
+  geom_point(color = "#82A67D", size = 1.6) +
+  geom_text(hjust = 0.4, vjust = -0.5, size = 3) +
+  ylim(0.00, 20.0) +
+  labs(title = "Covid-19 deaths since universal adult vaccine eligibility 
+compared with vaccination rates",
+       y = "avg. monthly deaths per 100.000",
+       x = "Share of total population fully vaccinated")+
+  scale_x_continuous(label = scales::percent) +
+  annotate("text", x = 0.59, y = 17, label = "Lower vaccination rate,
+higer death rate", size = 3) +
+  annotate("text", x = 0.73, y = 10, label = "Higher vaccination rate,
+lower death rate", size = 3) +
+  geom_segment(aes(x = 0.76, y = 9, xend = 0.78, yend = 7), 
+               arrow = arrow(lengt = unit(.5, "cm")))+
+  geom_segment(aes(x = 0.56, y = 16, xend = 0.53, yend = 19), 
+               arrow = arrow(lengt = unit(.5, "cm")))+
+  theme_light()
+```
+
+```{r}
+# Showing figure.
+us_corona_figure
+```
+
+# Task 2)
+
+## Running lm( ) and adding to figure
+
+```{r}
+# Running lm() function
+lm_result <- lm(deaths_per_100k ~ fully_vaccinated_pct_of_pop, us_corona_JSON)
+
+# Showing result
+lm_result
+```
+
+The lm( ) (linear models) function is used to fit linear regression models. The output shows us the equation to that line. So the equation to this linear function would be: $31.15 - 36.66x$
+
+Since the figure has percentage on the x-axis, one "step" to the right would mean 100% (1.00). That suggests the line would go beneath the x-axis before it hits 100%, and avg. monthly deaths would go below 0. In theory the data suggest that not everyone would need to be vaccinated for the US to get 0 deaths from corona. We know this is not true and its just a simplification of reality, but its a good method to easily spot trends and see the effect of the vaccine.
+
+```{r}
+# Adding the custom line and "removing standard error bar" to the previous figure.
+us_corona_figure + geom_smooth(method = lm, se = FALSE)
+```
+
+# Source
+
+-   Dean Chereden. (15.08.2022). *How to GET data from an API using R in RStudio*. Youtube. https://www.youtube.com/watch?v=AhZ42vSmDmE&t=1s
