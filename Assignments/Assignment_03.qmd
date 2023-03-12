@@ -12,6 +12,7 @@ rm(list=ls())
 suppressPackageStartupMessages(library(tidyverse))
 suppressPackageStartupMessages(library(jsonlite))
 suppressPackageStartupMessages(library(httr))
+suppressPackageStartupMessages(library(plotly))
 ```
 
 # Task 1)
@@ -83,7 +84,8 @@ us_corona_figure <- us_corona_JSON %>%
   labs(title = "Covid-19 deaths since universal adult vaccine eligibility 
 compared with vaccination rates",
        y = "avg. monthly deaths per 100.000",
-       x = "Share of total population fully vaccinated")+
+       x = "Share of total population fully vaccinated",
+       caption = "Source: NYTimes")+
   scale_x_continuous(label = scales::percent) +
   annotate("text", x = 0.59, y = 17, label = "Lower vaccination rate,
 higer death rate", size = 3) +
@@ -97,8 +99,18 @@ lower death rate", size = 3) +
 ```
 
 ```{r}
-# Showing figure.
+# Creating plotly figure (interactive figure).
+us_corona_plotly <- ggplotly(us_corona_figure)
+```
+
+```{r}
+# Showing static figure.
 us_corona_figure
+```
+
+```{r}
+# Showing plotly (interactive) figure.
+us_corona_plotly
 ```
 
 # Task 2)
@@ -118,10 +130,11 @@ The lm( ) (linear models) function is used to fit linear regression models. The 
 Since the figure has percentage on the x-axis, one "step" to the right would mean 100% (1.00). That suggests the line would go beneath the x-axis before it hits 100%, and avg. monthly deaths would go below 0. In theory the data suggest that not everyone would need to be vaccinated for the US to get 0 deaths from corona. We know this is not true and its just a simplification of reality, but its a good method to easily spot trends and see the effect of the vaccine.
 
 ```{r}
-# Adding the custom line and "removing standard error bar" to the previous figure.
+# Adding the custom line and "removing standard error bar" to the static figure.
 us_corona_figure + geom_smooth(method = lm, se = FALSE)
 ```
 
 # Source
 
 -   Dean Chereden. (15.08.2022). *How to GET data from an API using R in RStudio*. Youtube. https://www.youtube.com/watch?v=AhZ42vSmDmE&t=1s
+-   Lu, D. Sun, A. (28.12.2021). *Why covid death rates are rising for some groups*. NYTimes. https://www.nytimes.com/interactive/2021/12/28/us/covid-deaths.html?referrer=masthead
