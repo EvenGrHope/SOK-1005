@@ -99,18 +99,8 @@ lower death rate", size = 3) +
 ```
 
 ```{r}
-# Creating plotly figure (interactive figure).
-us_corona_plotly <- ggplotly(us_corona_figure)
-```
-
-```{r}
-# Showing static figure.
+# Showing figure.
 us_corona_figure
-```
-
-```{r}
-# Showing plotly (interactive) figure.
-us_corona_plotly
 ```
 
 # Task 2)
