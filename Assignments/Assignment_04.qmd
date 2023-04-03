@@ -1,0 +1,240 @@
+---
+title: "Assignment_04"
+author: "Candidate number: 06"
+format: html
+editor: visual
+warning: FALSE
+output:
+  html_notebook:
+    theme: journal
+    highlight: monochrome
+    toc: true
+    toc_float: false
+    toc_depth: 4
+    code_folding: hide
+    css: styles.css
+    df_print: kable
+---
+
+## Preperation
+
+```{r}
+# Clearing all objects in the workspace.
+rm(list=ls())
+
+# Loading packages.
+library(rvest)
+library(readr)
+library(knitr)
+library(quantmod)
+library(tidyverse)
+library(lubridate)
+
+# Supressing summarise info in dplyr.
+options(dplyr.summarise.inform = FALSE)
+```
+
+```{r}
+# Loading the CSV data from the URL (Task 1).
+data_t1 <- read_csv("https://raw.githubusercontent.com/uit-sok-1005-v23/uit-sok-1005-v23.github.io/main/storedata.csv", show_col_types = FALSE)
+```
+
+```{r, echo = FALSE}
+# Loading the daily stock price (Task 2).
+getSymbols("XOM", src = "yahoo")
+stock_data <- as.data.frame(XOM)
+```
+
+```{r, echo = FALSE}
+# Loading the daily oil price (Task 2).
+getSymbols("DCOILBRENTEU", src = "FRED")
+oil_data <- as.data.frame(DCOILBRENTEU)
+```
+
+```{r}
+# Creating a custome theme() function.
+theme_mood <- function() {
+  theme_minimal() +
+    theme(
+      plot.background = element_rect(fill = "gray10"),
+      plot.margin = unit(c(5, 10, 5, 10), units = "mm"),
+      plot.title = element_text(face = "bold.italic", color = "white"),
+      axis.title = element_text(face = "bold", color = "white"),
+      axis.text = element_text(color = "white"),
+      legend.text = element_text(color = "white"),
+      legend.title = element_text(face = "bold", color = "white"),
+      panel.grid = element_line(color = "gray40")
+      ) }
+```
+
+## Task 1.
+
+#### Subtask 1.
+
+```{r}
+# Filter the data based on region, customer segment and the last 3 months of 2017.
+# Summerise the sales grouped by month, region and customer segment.
+Table_1 <- data_t1 %>%
+  filter(Region %in% c("Region 1", "Region 9"), 
+         Customer_Segment %in% c("Corporate", "Consumer"),
+         year(Order_Date) == 2017, month(Order_Date) >= 10) %>%
+  group_by(month = month(Order_Date, label = TRUE), Region, Customer_Segment) %>%
+  summarise(Sales = sum(Sales))
+
+# Cleaning up the table.
+Table_1 <- Table_1 %>%
+  rename("Customer Segment" = "Customer_Segment") %>%
+  pivot_wider(names_from = Region, values_from = Sales) %>%
+  knitr::kable()
+
+# Showing Table 1.
+Table_1
+```
+
+#### Subtask 2.
+
+```{r}
+# Filter the data based on region and year.
+subtask2_data <- data_t1 %>%
+  filter(Region %in% c("Region 1", "Region 13"),
+         year(Order_Date) %in% c(2015, 2016, 2017))
+
+# Summarising the monthly total sales grouped by region, year and month.
+subtask2_sales <- subtask2_data %>%
+  group_by(Region, year = year(Order_Date), 
+                               month = month(Order_Date, label = TRUE)) %>%
+  summarise(total_sales = sum(Sales)) %>%
+  ungroup ()
+```
+
+```{r}
+# Creating the figure.
+Figure_1 <- subtask2_sales %>%
+  ggplot(aes(x = month, y = total_sales, fill = Region)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  scale_fill_manual(values = c("#0047AB", "#FFBF00")) +
+  facet_wrap(~year, ncol = 1) +
+  labs(title = "Monthly total sales in Region 1 and Region 3 (2015-2017)",
+       x = "Month",
+       y = "Total sales",
+       fill = "Region") +
+  theme_mood()
+
+# Showing the figure.
+Figure_1
+```
+
+#### Subtask 3.
+
+```{r}
+# Using the data from figure 1 to find the months where total sales are larger in region 13 then region 1.
+Table_2 <- subtask2_sales %>%
+  pivot_wider(names_from = Region, values_from = total_sales) %>%
+  filter(!!sym("Region 1") < !!sym("Region 13")) %>%
+  knitr::kable()
+
+# Showing the table.
+Table_2
+```
+
+#### Subtask 4.
+
+```{r}
+# Filtering the data for 2017, and all regions except 3, 5 and 8.
+subtask4_data <- data_t1 %>%
+  filter(year(Order_Date) == 2017,
+         !Region %in% c(3, 5, 8))
+
+# Grouping the filtered data by segment and category and finding the average.
+Table_3 <- subtask4_data %>%
+  group_by(Customer_Segment, Product_Category) %>%
+  summarise(avg_profit = mean(Profit))
+
+# Ungrouping and filtering the row with the highest value in avg_profit.
+subtask4_high <- Table_3 %>%
+  ungroup() %>%
+  filter(avg_profit == max(avg_profit))
+
+# Cleaning up the table.
+Table_3 <- Table_3 %>%
+  rename("Customer Segment" = "Customer_Segment",
+         "Product Category" = "Product_Category",
+         "Average Profit" = "avg_profit") %>%
+  knitr::kable()
+
+# Showing table 3.
+Table_3
+```
+
+```{r}
+# Printing out the highest average profit sector.
+print(paste0("The higest average profit was ", round(subtask4_high$avg_profit,2), 
+             " and this was achived in the ", subtask4_high$Customer_Segment, 
+             " ", subtask4_high$Product_Category, " sector."))
+```
+
+## Task 2.
+
+#### Part 1. Stock
+
+```{r}
+# Cleaning up and selecting the data im intrested in.
+exxon <- stock_data %>%
+  select("XOM.Volume", "XOM.Adjusted") %>%
+  rename("Volume" = "XOM.Volume", "Adjusted" = "XOM.Adjusted") %>%
+  tibble::rownames_to_column(var = "Date") %>%
+  mutate(Date = as.Date(Date)) %>%
+  filter(Date >= "2010-01-04" & Date <= "2022-12-31") %>%
+  mutate(year_month = format(Date, "%Y-%m")) %>%
+  group_by(year_month) %>%
+  summarise(average = weighted.mean(Adjusted, Volume)) %>%
+  mutate(year_month = ym(year_month))
+```
+
+#### Part 2. Oil
+
+```{r}
+# Cleaning up and selecting the data im intrested in.
+oil <- oil_data %>%
+  rename("price" = "DCOILBRENTEU") %>%
+  tibble::rownames_to_column(var = "Date") %>%
+  mutate(Date = as.Date(Date)) %>%
+  filter(Date >= "2010-01-04" & Date <= "2022-12-31") %>%
+  na.omit() %>%
+  mutate(year_month = format(Date, "%Y-%m")) %>%
+  group_by(year_month) %>%
+  summarise(average = mean(price)) %>%
+  mutate(year_month = ym(year_month))
+```
+
+#### Part 3. Figure
+
+```{r}
+# Creating the figure that compares EXXON and OIL.
+Figure_2 <- ggplot() +
+  geom_line(data = exxon, aes(x = year_month, y = average, color = "Exxon")) +
+  geom_line(data = oil, aes(x = year_month, y = average, color = "Oil")) +
+  scale_color_manual(values = c("#ff2800", "#00A19B")) +
+  ggtitle("Monthly average for Exxon and Oil price") +
+  xlab("Year") +
+  ylab("Price (USD)") +
+  labs(color = NULL) +
+  theme_mood()
+
+# Showing the figure.
+Figure_2
+```
+
+The figure shows the average stock price for Exxon and the average price for oil barrels in dollars, per month from 2010 - 2022.
+
+#### Part 4. lm ( ) function
+
+```{r}
+# Running the lm() function on the data.
+lm_result <- lm(exxon$average ~ oil$average)
+
+# Showing the result.
+print(lm_result)
+```
+
+The lm( ) (linear models) function is used to fit linear regression models. The output shows us the equation to that line. So the equation to this linear function would be: $48.1373 - 0.1282x$
